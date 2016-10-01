@@ -1,0 +1,65 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2"
+
+# Install role dependencies
+system("
+    if [ #{ARGV[0]} = 'up' ]; then
+        echo 'Installing role dependencies'
+        ./install_role_requirements.sh
+    fi
+")
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+#------------------------------------------------------------------------------
+# Common settings for all VMs
+
+    config.vm.synced_folder "shared", "/home/vagrant/shared"
+    config.vm.box = "bento/ubuntu-16.04"
+
+#------------------------------------------------------------------------------
+# Virtualbox settings
+
+    config.vm.provider "virtualbox" do |vb|
+        # Force more aggressive time updates, needed for when host machine sleeps
+        vb.customize [ "guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold", 10000 ]
+
+        vb.memory = 1024            # Set memory lower
+        vb.cpus = 2                 # set nprocs to 2; consul can block badly with just one
+    end
+
+    # Define two VMs, but don't provision them yet
+
+    #  We are using static IP addresses from the 10.10.10/24 CIDR block
+    #    though in non-Vagrant these should be assigned via DHCP
+
+#     config.vm.define "node00" do |node00|
+#         node00.vm.network "private_network", ip: "10.10.10.10", auto_config: false
+#     end
+#
+#     config.vm.define "node01" do |node01|
+#         node01.vm.network "private_network", ip: "10.10.10.11", auto_config: false
+#     end
+
+    config.vm.define "node02" do |node02|
+        node02.vm.hostname = 'example'
+        node02.vm.network "private_network", ip: "10.10.10.12", auto_config: false
+
+        # Open port 8500 for Consul UI
+        node02.vm.network :forwarded_port, guest: 8500, host: 8500
+
+        node02.vm.provision "ansible" do |ansible|
+            #ansible.extra_vars = "@group_vars/vagrant_managed"
+            ansible.groups = {
+                 "vagrant_managed" => ["node00","node01","node02"]
+             }
+            ansible.verbose = "vv"
+            ansible.playbook = "example.yml"
+            ansible.limit = "all"
+            #ansible.raw_arguments = "-i .vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory"
+        end
+    end
+
+end

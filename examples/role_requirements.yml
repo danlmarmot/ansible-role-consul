@@ -1,0 +1,20 @@
+---
+# See https://docs.ansible.com/ansible/galaxy.html#advanced-control-over-role-requirements-files for syntax
+
+# The requirements in this file should be run prior to running this role with a command similar to
+# ansible-galaxy install -r role_requirements.yml -p role_dependencies
+#
+#- src: git@github.com:danlmarmot/ansible-role-dnsmasq.git
+#  scm: git
+#  version: v1
+#  name: dnsmasq
+
+- src: git@github.com:danlmarmot/ansible-role-supervisord.git
+  scm: git
+  version: v4
+  name: supervisord
+
+- src: git@github.com:danlmarmot/ansible-role-dnsmasq.git
+  scm: git
+  version: v1
+  name: dnsmasq

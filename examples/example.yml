@@ -1,0 +1,10 @@
+- name: "Install Consul, Consul UI, and dnsmasq"
+  hosts: all
+  user: "{{ ansible_ssh_user }}"
+  become: true
+  gather_facts: true
+
+  roles:
+    - supervisord
+    - dnsmasq
+    - ansible-role-consul
