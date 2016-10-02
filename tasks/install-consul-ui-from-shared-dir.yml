@@ -2,19 +2,37 @@
 # Used to speed up Vagrant-based installs by copying packages locally
 # Files will be copied to your Vagrant shared/installers folder if not present
 
+- name: Default to installing consul ui
+  set_fact:
+    consul_ui_install_flag: true
+
+- name: Check if consul UI is running
+  uri:
+    url: http://127.0.0.1:{{ consul_config.http_port }}/ui/
+    return_content: yes
+  register: result
+  ignore_errors: true
+
+- name: Don't install if Consul UI is already running
+  set_fact:
+    consul_ui_install_flag: false
+  when: "'<!DOCTYPE html>' in result.content"
+
 - name: Check for consul ui installer (Vagrant)
   stat: path=/home/vagrant/shared/installers/{{ consul_ui.installer_filename }}
   register: consul_ui_installer_filepath
+  when: consul_ui_install_flag
 
 - name: Get consul ui installer if not present (Vagrant)
   get_url:
     url: "{{ consul_installer.url_base }}/{{ consul_version }}/{{ consul_ui.installer_filename }}"
     dest: "/home/vagrant/shared/installers/{{ consul_ui.installer_filename }}"
   run_once: true
-  when: consul_ui_installer_filepath.stat.exists == false
+  when: consul_ui_install_flag==true and consul_ui_installer_filepath.stat.exists == false
 
 - name: Extract consul ui
   command: unzip -qo /home/vagrant/shared/installers/{{ consul_ui.installer_filename }} -d {{ consul_ui.install_dir }}
+  when: consul_ui_install_flag
 
 - name: Replace exisiting Supervisor file for consul
   template:
@@ -23,12 +41,15 @@
     owner: root
     group: supervisor
     mode: 644
+  when: consul_ui_install_flag
 
 - name: Reread supervisor config for consul ui
   command: supervisorctl reread
+  when: consul_ui_install_flag
 
 - name: Restart consul with supervisor
   command: supervisorctl update
+  when: consul_ui_install_flag
 
 - name: Verify consul with ui is running in supervisor
   command: sup status consul
@@ -37,8 +58,9 @@
     - "'RUNNING' in result.stdout"
   delay: 15
   retries: 20
+  when: consul_ui_install_flag
 
-- name: Verify consul ui appears
+- name: Verify consul ui appears after installing
   uri:
     url: http://127.0.0.1:{{ consul_config.http_port }}/ui/
     return_content: yes
@@ -47,3 +69,4 @@
     - "'<!DOCTYPE html>' in result.content"
   delay: 3
   retries: 1
+  when: consul_ui_install_flag

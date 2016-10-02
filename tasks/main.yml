@@ -23,6 +23,7 @@
   command: consul --version
   when: consul_prev_install.stat.exists
   register: consul_prev_version_cmd
+  changed_when: False
 
 - name: If previous install, set version fact
   set_fact:
@@ -58,12 +59,16 @@
   file: path=/etc/dnsmasq.d/ state=directory
 
 - name: Add dnsmasq configuration
-  template: >
-    src=10-dnsmasq-consul.conf.j2
-    dest=/etc/dnsmasq.d/10-dnsmasq-consul.conf
+  template:
+    src: 10-dnsmasq-consul.conf.j2
+    dest: /etc/dnsmasq.d/10-dnsmasq-consul.conf
+  register: dnsmasq_config
 
 - name: Restart dnsmasq
-  service: name=dnsmasq state=restarted
+  service:
+    name: dnsmasq
+    state: restarted
+  when: dnsmasq_config.changed
 
 
 #####
@@ -81,6 +86,7 @@
 - name: Verify consul install
   command: consul --version
   register: consul_version_cmd
+#  changed_when: False
 
 - name: Verify consul version {{consul_version}} is installed
   assert:
@@ -111,6 +117,8 @@
     owner: root
     group: root
     mode: 644
+#  register: consul_supervisor_config
+#  changed_when: False
 
 - name: Restart supervisord
   service:
@@ -120,6 +128,14 @@
 - name: Restart service via supervisor
   command: supervisorctl restart consul
 
+#- name: Reread supervisor config for consul ui
+#  command: supervisorctl reread
+#  when: consul_supervisor_config.changed
+#
+#- name: Restart consul with supervisor
+#  command: supervisorctl update
+#  when: consul_supervisor_config.changed
+
 - name: Verify consul is running in supervisor
   command: sup status consul
   register: result
@@ -127,6 +143,7 @@
     - "'RUNNING' in result.stdout"
   delay: 3
   retries: 20
+#  changed_when: False
 
 - name: Add consul user to supervisor group
   user:
