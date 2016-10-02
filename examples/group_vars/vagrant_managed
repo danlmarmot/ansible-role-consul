@@ -1,0 +1,6 @@
+---
+# The name of this group for Ansible to manage
+group_name: vagrant_managed
+
+# Use this to allow Vagrant to manage consul with supervisord
+consul_runtime_user: vagrant

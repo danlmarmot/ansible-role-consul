@@ -73,6 +73,7 @@ vagrant.ssh.config
 
 # Vagrant sharing directories
 examples/shared/installers/*
+examples/shared/*
 !examples/shared/installers/ReadMe.md
 
 
@@ -84,3 +85,4 @@ scratch
 
 examples/role_dependencies/*
 !examples/role_dependencies/ReadMe.md
+*.retry

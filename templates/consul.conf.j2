@@ -1,8 +1,30 @@
+{%- set lbracket = "[" %}{%- set rbracket = "]" %}{%- set quote = '"' %}
+
+{%-  set retry_ips = [] %}
+{%- for host in groups['all'] %}
+    {%- for interface in hostvars[host]['ansible_interfaces'] %}
+        {%- if interface not in [hostvars[host]['ansible_default_ipv4']['interface'], 'lo'] %}
+              {%- set _ = retry_ips.append(hostvars[host]['ansible_' ~ interface]['ipv4']['address']) %}
+        {%-  endif %}
+    {%- endfor %}
+{%-  endfor -%}
+
+{#Take the first private IP when more than one network interface; choosing which interface to bind to is out-of-scope#}
+{%- set private_interface_ips = [] %}
+{%- for interface in hostvars[inventory_hostname_short]['ansible_interfaces'] %}
+    {%- if interface not in [hostvars[inventory_hostname_short]['ansible_default_ipv4']['interface'], 'lo'] %}
+        {%- set _ = private_interface_ips.append(hostvars[inventory_hostname_short]['ansible_' ~ interface]['ipv4']['address']) %}
+    {%- endif %}
+{%-  endfor -%}
+{%- set consul_bind_ip = private_interface_ips[0] -%}
+
 {
-  "bind_addr": "{{ hostvars[inventory_hostname_short]['ansible_default_ipv4']['address'] }}",
+  "bind_addr": "{{ consul_bind_ip }}",
   "bootstrap_expect": 3,
   "data_dir": "{{ consul_installer.install_dir }}",
   "log_level": "{{ consul_config.log_level }}",
   "node_name": "{{ inventory_hostname }}",
-  "server": true
+  "server": true,
+{#  "retry_join": [ "{{ retry_ips|join(', ') }}" ]#}
+  "retry_join": ["{{ retry_ips | join('", "') }}"]
 }

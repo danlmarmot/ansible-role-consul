@@ -128,6 +128,13 @@
   delay: 3
   retries: 20
 
+- name: Add consul user to supervisor group
+  user:
+    name: "{{ consul_runtime_user }}"
+    groups: supervisor
+    append: yes
+  when: consul_runtime_user is defined
+
 #- name: Copy consul join script
 #  template:
 #    src: consul_join.sh.j2

@@ -2,6 +2,7 @@
 # vi: set ft=ruby :
 
 VAGRANTFILE_API_VERSION = "2"
+Vagrant.require_version ">= 1.8.6"
 
 # Install role dependencies
 system("
@@ -11,13 +12,44 @@ system("
     fi
 ")
 
+# shell_script to deal with 16.04 peculiarities
+# $script = <<SCRIPT
+# sed -i.bak 's/GRUB_CMDLINE_LINUX=.*$/GRUB_CMDLINE_LINUX="net\.ifnames=0 biosdevname=0"/g' /etc/default/grub; update-grub; init 6
+# SCRIPT
+
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+
+#   if Vagrant.has_plugin?("vagrant-hostmanager")
+#     config.hostmanager.enabled = true
+#     config.hostmanager.manage_host = true
+#   else
+#     $stderr.puts "\nInstall vagrant-hostmanager with 'vagrant plugin install vagrant-hostmanager'.  Exiting."
+#     exit(1)
+#   end
+
+#   if Vagrant.has_plugin?("vagrant-cachier")
+#     config.cache.scope = :box
+#   else
+#     $stderr.puts "\nInstall vagrant-cachier with 'vagrant plugin install vagrant-cachier'.  Exiting."
+#     exit(1)
+#   end
+
+  # auto_network fakes a DHCP server.  See https://github.com/oscar-stack/vagrant-auto_network
+#   if Vagrant.has_plugin?("vagrant-auto_network")
+#     config.cache.scope = :box
+#   else
+#     $stderr.puts "\nInstall vagrant-cachier with 'vagrant plugin install vagrant-cachier'.  Exiting."
+#     exit(1)
+#   end
 
 #------------------------------------------------------------------------------
 # Common settings for all VMs
 
     config.vm.synced_folder "shared", "/home/vagrant/shared"
     config.vm.box = "bento/ubuntu-16.04"
+    config.vm.network "private_network", type: "dhcp"
+#     config.vm.provision "shell", inline: $script
 
 #------------------------------------------------------------------------------
 # Virtualbox settings
@@ -35,23 +67,25 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     #  We are using static IP addresses from the 10.10.10/24 CIDR block
     #    though in non-Vagrant these should be assigned via DHCP
 
-#     config.vm.define "node00" do |node00|
-#         node00.vm.network "private_network", ip: "10.10.10.10", auto_config: false
-#     end
-#
-#     config.vm.define "node01" do |node01|
-#         node01.vm.network "private_network", ip: "10.10.10.11", auto_config: false
-#     end
+    config.vm.define "node00" do |node00|
+        node00.vm.hostname = 'node00'
+  #      node00.vm.network "private_network", type: "dhcp"
+    end
+
+    config.vm.define "node01" do |node01|
+        node01.vm.hostname = 'node01'
+        #node01.vm.network "private_network", ip: "10.10.10.11", auto_config: false
+  #      node01.vm.network "private_network", type: "dhcp"
+    end
 
     config.vm.define "node02" do |node02|
-        node02.vm.hostname = 'example'
-        node02.vm.network "private_network", ip: "10.10.10.12", auto_config: false
+        node02.vm.hostname = 'node02'
 
         # Open port 8500 for Consul UI
         node02.vm.network :forwarded_port, guest: 8500, host: 8500
 
         node02.vm.provision "ansible" do |ansible|
-            #ansible.extra_vars = "@group_vars/vagrant_managed"
+            ansible.extra_vars = "@group_vars/vagrant_managed"
             ansible.groups = {
                  "vagrant_managed" => ["node00","node01","node02"]
              }
