@@ -28,6 +28,6 @@
 {#  "retry_join": [ "{{ retry_ips|join(', ') }}" ]#}
   "retry_join": ["{{ retry_ips | join('", "') }}"]
 {%- if consul_ui.install %}
-  "ui_dir": "{{ consul_ui.install_dir }}"
+  ,"ui_dir": "{{ consul_ui.install_dir }}"
 {%- endif -%}
 }

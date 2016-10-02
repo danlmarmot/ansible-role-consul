@@ -146,4 +146,4 @@
 
 - name: Install Consul UI
   include: install-consul-ui-from-shared-dir.yml
-  when:  shared_folder.stat.exists and install_consul_ui == true
+  when:  shared_folder.stat.exists and consul_ui.install == true
