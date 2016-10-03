@@ -86,7 +86,7 @@
 - name: Verify consul install
   command: consul --version
   register: consul_version_cmd
-#  changed_when: False
+  changed_when: False
 
 - name: Verify consul version {{consul_version}} is installed
   assert:
@@ -117,16 +117,21 @@
     owner: root
     group: root
     mode: 644
-#  register: consul_supervisor_config
+  register: consul_supervisor_config
+# todo: figure out the interaction between this and supervisord restarts
 #  changed_when: False
 
 - name: Restart supervisord
   service:
     name: supervisord
     state: restarted
+  changed_when: False
+  when: consul_supervisor_config.changed
 
 - name: Restart service via supervisor
   command: supervisorctl restart consul
+  changed_when: False
+  when: consul_supervisor_config.changed
 
 #- name: Reread supervisor config for consul ui
 #  command: supervisorctl reread
@@ -143,7 +148,7 @@
     - "'RUNNING' in result.stdout"
   delay: 3
   retries: 20
-#  changed_when: False
+  changed_when: False
 
 - name: Add consul user to supervisor group
   user:
