@@ -133,6 +133,7 @@
   changed_when: False
   when: consul_supervisor_config.changed
 
+# Todo: figure out why supervisor reread doesn't work
 #- name: Reread supervisor config for consul ui
 #  command: supervisorctl reread
 #  when: consul_supervisor_config.changed

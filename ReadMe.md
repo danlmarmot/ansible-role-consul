@@ -13,7 +13,6 @@ A Vagrant/VirtualBox environment is provided in the /examples directory.  To get
 
 1. Install Vagrant, Virtualbox, and Ansible
 1. Change your directory into 'examples'
-1. Run the 'install_role_requirements.sh' script.  This add any additional role dependencies.
 1. Run 'vagrant up' to bring up the VM.
 
 #### Verifying the Consul UI
